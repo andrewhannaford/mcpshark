@@ -4,7 +4,52 @@ import (
 	"bytes"
 	"encoding/json"
 	"testing"
+
+	"github.com/andrewhannaford/mcpshark/pkg/schema"
 )
+
+// TestBuildPayloadRedaction verifies that buildPayload applies redaction modes correctly.
+func TestBuildPayloadRedaction(t *testing.T) {
+	params := json.RawMessage(`{"name":"readFile","arguments":{"path":"/etc/passwd"}}`)
+
+	t.Run("reference_only hashes but does not store raw", func(t *testing.T) {
+		p := buildPayload(params, schema.RedactionReferenceOnly)
+		if p.ParamsSHA256 == "" {
+			t.Error("ParamsSHA256 should be set")
+		}
+		if p.ParamsRedacted != "" {
+			t.Error("ParamsRedacted should be empty in reference_only mode")
+		}
+		if p.ParamsSizeBytes != len(params) {
+			t.Errorf("ParamsSizeBytes = %d, want %d", p.ParamsSizeBytes, len(params))
+		}
+	})
+
+	t.Run("full stores raw params", func(t *testing.T) {
+		p := buildPayload(params, schema.RedactionFull)
+		if p.ParamsRedacted == "" {
+			t.Error("ParamsRedacted should be set in full mode")
+		}
+		if p.ParamsSHA256 == "" {
+			t.Error("ParamsSHA256 should always be set")
+		}
+	})
+
+	t.Run("empty params produces no hash", func(t *testing.T) {
+		p := buildPayload(nil, schema.RedactionReferenceOnly)
+		if p.ParamsSHA256 != "" {
+			t.Error("empty params should produce no hash")
+		}
+	})
+
+	t.Run("hash is deterministic", func(t *testing.T) {
+		p1 := buildPayload(params, schema.RedactionReferenceOnly)
+		p2 := buildPayload(params, schema.RedactionReferenceOnly)
+		if p1.ParamsSHA256 != p2.ParamsSHA256 {
+			t.Error("hash must be deterministic")
+		}
+	})
+}
 
 // TestHandleMessageBOMStripping verifies that a UTF-8 BOM at the start of a
 // line does not prevent JSON parsing after stripping.

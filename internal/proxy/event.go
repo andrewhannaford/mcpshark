@@ -1,7 +1,10 @@
 package proxy
 
 import (
+	"crypto/sha256"
+	"encoding/hex"
 	"encoding/json"
+	"math/rand/v2"
 	"os"
 	osuser "os/user"
 	"runtime"
@@ -103,10 +106,31 @@ func (s *Stdio) buildEvent(msg *protocol.Message, dir schema.Direction, raw []by
 			ErrorCode:      errCode,
 			ErrorMessage:   errMsg,
 		},
-		Payload: schema.Payload{
-			ParamsSizeBytes: len(msg.Params),
-		},
+		Payload: buildPayload(msg.Params, s.cfg.RedactionMode),
 	}
+}
+
+// buildPayload applies redaction rules to the raw params bytes.
+func buildPayload(params json.RawMessage, mode schema.RedactionMode) schema.Payload {
+	p := schema.Payload{ParamsSizeBytes: len(params)}
+	if len(params) == 0 {
+		return p
+	}
+
+	h := sha256.Sum256(params)
+	p.ParamsSHA256 = hex.EncodeToString(h[:])
+
+	switch mode {
+	case schema.RedactionFull:
+		p.ParamsRedacted = string(params)
+	case schema.RedactionSampled:
+		// Store raw params for ~1% of events to support debugging in production.
+		if rand.Float64() < 0.01 {
+			p.ParamsRedacted = string(params)
+		}
+	}
+	// reference_only: hash + size only — no raw params stored (default).
+	return p
 }
 
 // updateSession extracts the negotiated protocolVersion and capabilities from

@@ -43,8 +43,9 @@ type Pipeline struct {
 // NewPipeline creates a pipeline with the configured detectors.
 func NewPipeline(cfg Config) *Pipeline {
 	p := &Pipeline{cfg: cfg}
-	// Pluggable detectors are registered here as they are implemented.
-	// TODO(week4): register secrets, injection, drift, allowlist detectors.
+	p.detectors = append(p.detectors, NewDriftDetector())
+	// TODO(week4): register secrets and injection detectors.
+	// TODO(week5): register allowlist detector.
 	return p
 }
 
