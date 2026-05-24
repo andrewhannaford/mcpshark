@@ -191,15 +191,20 @@ mcpshark run [flags] -- <command> [args...]
 
 ## Sigma rules
 
-Seven production-ready Sigma rules ship in `sigma-rules/`:
+Twelve production-ready Sigma rules ship in `sigma-rules/`:
 
 | File | Level |
 |------|-------|
 | `mcp_sampling_request.yml` | high |
 | `mcp_tool_poisoning_drift.yml` | high |
 | `mcp_prompt_injection_detected.yml` | high |
+| `mcp_sampling_exfil_pattern.yml` | **critical** |
+| `mcp_tool_call_credential_path.yml` | high |
+| `mcp_resources_read_sensitive.yml` | high |
+| `mcp_unknown_server_identity.yml` | high |
 | `mcp_large_sampling_request.yml` | medium |
 | `mcp_elicitation_request.yml` | medium |
+| `mcp_high_frequency_tool_calls.yml` | medium |
 | `mcp_roots_list_recon.yml` | low |
 | `mcp_server_log_notification.yml` | info |
 

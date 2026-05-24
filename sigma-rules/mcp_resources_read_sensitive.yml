@@ -1,0 +1,48 @@
+title: MCP Resource Read Request Targeting Sensitive Paths
+id: d4e0f9a8-1b3c-2d4e-5f6a-7b8c9d0e1f2a
+status: stable
+description: |
+    Detects resources/read requests targeting paths that commonly contain
+    sensitive data. MCP servers with filesystem access can be directed — via
+    prompt injection or a compromised tool — to read credential files, private
+    keys, or environment configuration.
+
+    Unlike tools/call, resources/read is the native MCP primitive for accessing
+    server-managed data. A poisoned tool description can instruct the LLM to
+    call resources/read with an attacker-controlled URI.
+references:
+    - https://modelcontextprotocol.io/specification/2025-06-18/server/resources
+    - https://attack.mitre.org/techniques/T1552/
+author: Andrew Hannaford (@andrewhannaford)
+date: 2026-05-24
+tags:
+    - attack.T1552      # ATT&CK: Unsecured Credentials
+    - attack.T1083      # ATT&CK: File and Directory Discovery
+    - attack.AML.T0054  # ATLAS: LLM Prompt Injection
+logsource:
+    product: mcpshark
+    category: mcp_traffic
+detection:
+    selection:
+        mcp.method: 'resources/read'
+        mcp.direction: 'client_to_server'
+    sensitive_uri:
+        mcp.resource_uri|contains:
+            - '.ssh/id_rsa'
+            - '.ssh/id_ed25519'
+            - '.aws/credentials'
+            - '/etc/passwd'
+            - '/etc/shadow'
+            - '.env'
+            - 'id_rsa'
+            - 'private_key'
+    condition: selection and sensitive_uri
+fields:
+    - mcp.server_name
+    - mcp.resource_uri
+    - mcp.server_identity_sha256
+    - session.id
+falsepositives:
+    - Infrastructure management tools that legitimately need SSH key paths
+    - DevOps automation servers operating in privileged mode
+level: high

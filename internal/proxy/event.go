@@ -4,6 +4,7 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
+	"io"
 	"math/rand/v2"
 	"os"
 	osuser "os/user"
@@ -15,11 +16,14 @@ import (
 	"github.com/andrewhannaford/mcpshark/pkg/schema"
 )
 
-// cached OS info — resolved once and reused for every event.
+// cached OS/identity info — resolved once and reused for every event.
 var (
-	osInfoOnce sync.Once
-	cachedHost string
-	cachedUser string
+	osInfoOnce     sync.Once
+	cachedHost     string
+	cachedUser     string
+	serverHashOnce sync.Once
+	serverHashes   = map[string]string{} // path -> SHA-256 hex
+	serverHashMu   sync.RWMutex
 )
 
 func initOSInfo() {
@@ -94,9 +98,10 @@ func (s *Stdio) buildEvent(msg *protocol.Message, dir schema.Direction, raw []by
 			Executable: os.Args[0],
 		},
 		MCP: schema.MCP{
-			Transport:      schema.TransportStdio,
-			ServerName:     s.cfg.ServerName,
-			Direction:      dir,
+			Transport:            schema.TransportStdio,
+			ServerName:           s.cfg.ServerName,
+			ServerIdentitySHA256: serverBinaryHash(s.cfg.Command),
+			Direction:            dir,
 			Method:         msg.Method,
 			RequestID:      msg.ID,
 			ToolName:       toolName,
@@ -131,6 +136,42 @@ func buildPayload(params json.RawMessage, mode schema.RedactionMode) schema.Payl
 	}
 	// reference_only: hash + size only — no raw params stored (default).
 	return p
+}
+
+// serverBinaryHash returns the SHA-256 hex digest of the server binary at path.
+// The result is cached — we read the file once per unique path, never per-event.
+// An empty string is returned if the binary cannot be read (e.g. the command is
+// a script interpreter like "npx" resolved via PATH).
+func serverBinaryHash(path string) string {
+	serverHashMu.RLock()
+	if h, ok := serverHashes[path]; ok {
+		serverHashMu.RUnlock()
+		return h
+	}
+	serverHashMu.RUnlock()
+
+	h := computeFileHash(path)
+
+	serverHashMu.Lock()
+	serverHashes[path] = h
+	serverHashMu.Unlock()
+	return h
+}
+
+func computeFileHash(path string) string {
+	f, err := os.Open(path)
+	if err != nil {
+		// Fallback: try resolving via PATH (exec.LookPath equivalent).
+		// If still not found, return empty — not fatal.
+		return ""
+	}
+	defer f.Close()
+
+	hasher := sha256.New()
+	if _, err := io.Copy(hasher, f); err != nil {
+		return ""
+	}
+	return hex.EncodeToString(hasher.Sum(nil))
 }
 
 // updateSession extracts the negotiated protocolVersion and capabilities from

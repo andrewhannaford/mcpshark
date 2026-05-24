@@ -1,0 +1,44 @@
+title: High-Frequency MCP Tool Calls (Potential Automated Abuse)
+id: f6a2b1c0-3d5e-4f6a-7b8c-9d0e1f2a3b4c
+status: experimental
+description: |
+    Detects unusually high volumes of tools/call requests within a single MCP
+    session. A compromised or malicious server may instruct the LLM to issue
+    many tool calls in rapid succession to:
+      - Enumerate directory structures via repeated readFile/listDir calls
+      - Scrape all accessible data before session termination
+      - Exfiltrate data piecemeal in individual tool call results
+      - Brute-force accessible paths
+
+    Thresholds should be tuned to your environment. Document-processing workflows
+    may legitimately issue many calls.
+
+    Note: mcpshark emits one event per message. Aggregate-count correlation must
+    be performed in the SIEM using session.id as the grouping key.
+references:
+    - https://attack.mitre.org/techniques/T1530/
+    - https://atlas.mitre.org/techniques/AML.T0054
+author: Andrew Hannaford (@andrewhannaford)
+date: 2026-05-24
+tags:
+    - attack.T1530      # ATT&CK: Data from Cloud Storage
+    - attack.T1083      # ATT&CK: File and Directory Discovery
+logsource:
+    product: mcpshark
+    category: mcp_traffic
+detection:
+    selection:
+        mcp.method: 'tools/call'
+        mcp.direction: 'client_to_server'
+    timeframe: 60s
+    condition: selection | count() by session.id > 50
+fields:
+    - mcp.server_name
+    - mcp.tool_name
+    - session.id
+    - mcp.server_identity_sha256
+falsepositives:
+    - Automated document processing workflows
+    - Batch data migration tools
+    - Legitimate scripted MCP clients with high call volumes
+level: medium

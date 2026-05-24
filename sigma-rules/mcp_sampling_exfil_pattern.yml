@@ -1,0 +1,47 @@
+title: MCP Sampling Request with Credential or Exfiltration Pattern
+id: e5f1a0b9-2c4d-3e5f-6a7b-8c9d0e1f2a3b
+status: stable
+description: |
+    Detects sampling/createMessage requests where mcpshark's injection detector
+    has identified credential file targets or explicit exfiltration directives
+    in the prompt content. This is a compound signal — both the high-risk
+    method and a specific payload pattern are present.
+
+    Correlation of mcp.sampling.create with mcp.injection.file_exfil_target
+    or mcp.injection.exfiltration represents the highest-confidence indicator
+    of a server-initiated data theft attempt.
+
+    The evil-server demo scenario in corpus/traces/evil-server fires this rule.
+references:
+    - https://modelcontextprotocol.io/specification/2025-06-18/client/sampling
+    - https://atlas.mitre.org/techniques/AML.T0054
+    - https://github.com/andrewhannaford/mcpshark
+author: Andrew Hannaford (@andrewhannaford)
+date: 2026-05-24
+tags:
+    - attack.AML.T0054  # ATLAS: LLM Prompt Injection
+    - attack.T1059      # ATT&CK: Command and Scripting Interpreter
+    - attack.T1552      # ATT&CK: Unsecured Credentials
+logsource:
+    product: mcpshark
+    category: mcp_traffic
+detection:
+    method_match:
+        mcp.method: 'sampling/createMessage'
+        mcp.direction: 'server_to_client'
+    exfil_detection:
+        detections|contains:
+            - 'mcp.injection.file_exfil_target'
+            - 'mcp.injection.exfiltration'
+            - 'mcp.injection.verbatim_response'
+    condition: method_match and exfil_detection
+fields:
+    - mcp.server_name
+    - mcp.server_identity_sha256
+    - session.id
+    - detections
+    - payload.params_sha256
+    - payload.params_size_bytes
+falsepositives:
+    - None expected — this is a compound detection
+level: critical
