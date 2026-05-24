@@ -1,0 +1,43 @@
+{
+  "_comment": "claude_desktop_config.json — mcpshark wrapper examples",
+  "_location_macos": "~/Library/Application Support/Claude/claude_desktop_config.json",
+  "_location_windows": "%APPDATA%\\Claude\\claude_desktop_config.json",
+
+  "mcpServers": {
+
+    "_example_filesystem_BEFORE": {
+      "_comment": "Original config (without mcpshark)",
+      "command": "/usr/bin/npx",
+      "args": ["-y", "@modelcontextprotocol/server-filesystem", "/tmp"]
+    },
+
+    "filesystem": {
+      "_comment": "With mcpshark — replace 'mcpshark' with the full path if not in PATH",
+      "command": "mcpshark",
+      "args": [
+        "run",
+        "--name", "filesystem",
+        "--output", "/tmp/mcpshark-filesystem.jsonl",
+        "--redaction", "reference_only",
+        "--",
+        "/usr/bin/npx", "-y", "@modelcontextprotocol/server-filesystem", "/tmp"
+      ]
+    },
+
+    "github": {
+      "_comment": "Example with allowlist enforcement",
+      "command": "mcpshark",
+      "args": [
+        "run",
+        "--name", "github",
+        "--output", "/tmp/mcpshark-github.jsonl",
+        "--allowlist", "~/.mcpshark/allowlist.yaml",
+        "--",
+        "/usr/bin/npx", "-y", "@modelcontextprotocol/server-github"
+      ],
+      "env": {
+        "GITHUB_PERSONAL_ACCESS_TOKEN": "<your-token>"
+      }
+    }
+  }
+}

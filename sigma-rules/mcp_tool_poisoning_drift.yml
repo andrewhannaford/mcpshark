@@ -1,0 +1,39 @@
+title: MCP Tool List Change Detected (Potential Rug-Pull)
+id: c5b3d2e9-4f6a-5b7c-9d0e-1f2a3b4c5d6e
+status: stable
+description: |
+    Detects a change in the tools/list response from an MCP server after the
+    initial session fingerprint was established.
+
+    "Tool poisoning" (rug-pull) is an attack where a server presents benign tools
+    at install time, then silently changes tool descriptions or adds malicious tools
+    at a later session. Because tool descriptions are included in the LLM system
+    prompt, a changed description can include injected instructions.
+
+    mcpshark fingerprints tools/list responses per server identity (SHA-256 of the
+    binary for stdio servers). Any drift from the first-seen fingerprint triggers
+    this rule with fields identifying exactly which tools changed.
+references:
+    - https://invariantlabs.ai/blog/mcp-security-notification-tool-poisoning-attacks
+    - https://atlas.mitre.org/techniques/AML.T0054
+author: Andrew Hannaford (@andrewhannaford)
+date: 2026-05-24
+tags:
+    - attack.AML.T0054  # ATLAS: LLM Prompt Injection
+    - attack.AML.T0051  # ATLAS: LLM Plugin Compromise
+    - attack.T1195      # ATT&CK: Supply Chain Compromise
+logsource:
+    product: mcpshark
+    category: mcp_traffic
+detection:
+    selection:
+        detections|contains:
+            - rule_id: 'mcp.drift.tools_list_changed'
+    condition: selection
+fields:
+    - mcp.server_name
+    - mcp.server_identity_sha256
+    - detections[0].detail
+falsepositives:
+    - Intentional server updates or version upgrades
+level: high

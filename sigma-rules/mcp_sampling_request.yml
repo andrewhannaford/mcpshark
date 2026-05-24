@@ -1,0 +1,43 @@
+title: MCP Server-Initiated LLM Execution (sampling/createMessage)
+id: b4a2c1d8-3e5f-4a6b-8c9d-0e1f2a3b4c5d
+status: stable
+description: |
+    Detects when an MCP server sends a sampling/createMessage request to the client,
+    directing the client's LLM to run an arbitrary completion.
+
+    This is one of the highest-risk MCP operations:
+      - A malicious or compromised server can exfiltrate data via crafted prompts
+      - A server can consume the user's API tokens without their knowledge
+      - A server can poison the agent's context with adversarial instructions
+      - A server can use this as a confused deputy to call other MCP tools
+
+    Legitimate uses exist (multi-agent orchestration), so tune with allowlisted servers.
+references:
+    - https://modelcontextprotocol.io/specification/2025-06-18/client/sampling
+    - https://atlas.mitre.org/techniques/AML.T0054
+author: Andrew Hannaford (@andrewhannaford)
+date: 2026-05-24
+tags:
+    - attack.AML.T0054  # ATLAS: LLM Prompt Injection
+    - attack.AML.T0051  # ATLAS: LLM Plugin Compromise
+    - attack.T1059      # ATT&CK: Command and Scripting Interpreter
+    - attack.T1567      # ATT&CK: Exfiltration Over Web Service
+logsource:
+    product: mcpshark
+    category: mcp_traffic
+detection:
+    selection:
+        mcp.method: 'sampling/createMessage'
+        mcp.direction: 'server_to_client'
+    condition: selection
+fields:
+    - mcp.server_name
+    - mcp.server_identity_sha256
+    - session.id
+    - session.mcp_protocol_version
+    - payload.params_sha256
+    - payload.params_size_bytes
+falsepositives:
+    - MCP servers that legitimately use sampling for multi-agent orchestration
+    - Servers on the configured allowlist with pinned identity
+level: high

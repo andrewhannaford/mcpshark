@@ -1,0 +1,22 @@
+dist/
+*.exe
+/mcpshark
+
+# Go
+*.test
+*.out
+vendor/
+
+# State DB (local dev data — never commit)
+*.db
+*.db-shm
+*.db-wal
+~/.mcpshark/
+
+# Sensitive test fixtures
+corpus/traces/*.sensitive.jsonl
+
+# IDE
+.vscode/
+.idea/
+*.swp
