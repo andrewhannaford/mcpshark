@@ -52,7 +52,7 @@ func init() {
 
 	f := runCmd.Flags()
 	f.StringVarP(&runFlags.outputDest, "output", "o", "-",
-		`output destination: "-" for stdout or a file path`)
+		`output destination: "-" for stderr (default) or a file path`)
 	f.StringVarP(&runFlags.redactionMode, "redaction", "r", "reference_only",
 		"params redaction mode: full (dev only) | sampled | reference_only")
 	f.StringVarP(&runFlags.allowlistPath, "allowlist", "a", "",

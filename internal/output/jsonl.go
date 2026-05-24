@@ -25,13 +25,14 @@ type JSONLEmitter struct {
 }
 
 // NewJSONLEmitter creates an emitter writing to dest.
-// Pass "-" for stdout.
+// Pass "-" to write to stderr. mcpshark uses stdout for the MCP protocol
+// passthrough, so events must not share that stream.
 func NewJSONLEmitter(dest string) (*JSONLEmitter, error) {
 	if dest == "-" {
 		return &JSONLEmitter{
-			w:      os.Stdout,
-			bw:     bufio.NewWriterSize(os.Stdout, 64*1024),
-			stdout: true,
+			w:      os.Stderr,
+			bw:     bufio.NewWriterSize(os.Stderr, 64*1024),
+			stdout: true, // "stdout" here means "don't close on Close()"
 		}, nil
 	}
 	f, err := os.Create(dest)
