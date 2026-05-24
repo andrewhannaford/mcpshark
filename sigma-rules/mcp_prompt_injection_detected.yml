@@ -1,0 +1,51 @@
+title: MCP Prompt Injection Pattern Detected by mcpshark
+id: e9d5a4b3-6c8e-7d0f-1a2b-3c4d5e6f7a8b
+status: stable
+description: |
+    Detects when mcpshark's injection detector fires a finding against an MCP message.
+    This rule correlates on the detection event itself — useful for SIEM deployments
+    where mcpshark JSON-L is ingested as a log source.
+
+    The injection detector scans:
+      - sampling/createMessage params (systemPrompt + message content)
+      - tools/list tool descriptions (hidden from user, direct LLM context)
+      - elicitation/create prompt text
+      - notifications/message log data
+
+    Matched patterns include: ignore/disregard instructions, persona override,
+    credential file targets (~/.ssh/id_rsa, /etc/passwd), exfiltration directives,
+    and verbatim output anchors.
+references:
+    - https://github.com/andrewhannaford/mcpshark
+    - https://atlas.mitre.org/techniques/AML.T0051
+    - https://atlas.mitre.org/techniques/AML.T0054
+author: Andrew Hannaford (@andrewhannaford)
+date: 2026-05-24
+tags:
+    - attack.AML.T0051  # ATLAS: LLM Plugin Compromise
+    - attack.AML.T0054  # ATLAS: LLM Prompt Injection
+    - attack.T1059      # ATT&CK: Command and Scripting Interpreter
+logsource:
+    product: mcpshark
+    category: mcp_traffic
+detection:
+    selection:
+        detections|contains:
+            - 'mcp.injection'
+    filter_drift:
+        detections|contains:
+            - 'mcp.tools.drift'  # Drift has its own rule; exclude overlap
+    condition: selection and not filter_drift
+fields:
+    - mcp.server_name
+    - mcp.server_identity_sha256
+    - mcp.direction
+    - mcp.method
+    - session.id
+    - detections[0].rule_id
+    - detections[0].confidence
+    - payload.params_sha256
+falsepositives:
+    - Security research tools or red-team payloads in isolated test environments
+    - Regex pattern matching on benign content (tune confidence threshold)
+level: high

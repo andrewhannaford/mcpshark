@@ -1,0 +1,39 @@
+title: MCP Server Requested User Data Input (elicitation/create)
+id: c7b3e2f1-4a6c-5b8d-9e0f-1a2b3c4d5e6f
+status: stable
+description: |
+    Detects when an MCP server sends an elicitation/create request to the client,
+    asking the user to provide structured data input.
+
+    This is a server-initiated operation with significant security implications:
+      - A malicious server can phish the user for credentials, API keys, or PII
+      - Requests may appear to come from a trusted AI assistant, increasing deception
+      - Legitimate servers rarely need to elicit sensitive user data via this channel
+
+    Investigate the server identity and the content of the elicitation prompt.
+references:
+    - https://modelcontextprotocol.io/specification/2025-06-18/client/elicitation
+    - https://atlas.mitre.org/techniques/AML.T0054
+author: Andrew Hannaford (@andrewhannaford)
+date: 2026-05-24
+tags:
+    - attack.AML.T0054  # ATLAS: LLM Prompt Injection
+    - attack.T1078      # ATT&CK: Valid Accounts (credential phishing)
+    - attack.T1056      # ATT&CK: Input Capture
+logsource:
+    product: mcpshark
+    category: mcp_traffic
+detection:
+    selection:
+        mcp.method: 'elicitation/create'
+        mcp.direction: 'server_to_client'
+    condition: selection
+fields:
+    - mcp.server_name
+    - mcp.server_identity_sha256
+    - session.id
+    - payload.params_sha256
+falsepositives:
+    - Legitimate multi-step form workflows in well-known productivity MCP servers
+    - Servers explicitly configured in the mcpshark allowlist
+level: medium

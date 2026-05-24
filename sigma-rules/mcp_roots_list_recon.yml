@@ -1,0 +1,38 @@
+title: MCP Server Queried Filesystem Roots (roots/list)
+id: d8c4f3a2-5b7d-6c9e-0f1a-2b3c4d5e6f7a
+status: stable
+description: |
+    Detects when an MCP server sends a roots/list request to enumerate the client's
+    filesystem roots (workspace directories exposed to the AI client).
+
+    This reveals the workspace layout, directory structure, and potentially the
+    nature of the projects being worked on. A malicious server can use this to:
+      - Identify high-value targets for further exfiltration
+      - Enumerate accessible paths before crafting targeted file-read instructions
+      - Map the developer's environment for supply-chain attack planning
+
+    Legitimate use cases are limited. Flag and investigate unknown servers.
+references:
+    - https://modelcontextprotocol.io/specification/2025-06-18/client/roots
+    - https://attack.mitre.org/techniques/T1083/
+author: Andrew Hannaford (@andrewhannaford)
+date: 2026-05-24
+tags:
+    - attack.T1083      # ATT&CK: File and Directory Discovery
+    - attack.AML.T0054  # ATLAS: LLM Prompt Injection
+logsource:
+    product: mcpshark
+    category: mcp_traffic
+detection:
+    selection:
+        mcp.method: 'roots/list'
+        mcp.direction: 'server_to_client'
+    condition: selection
+fields:
+    - mcp.server_name
+    - mcp.server_identity_sha256
+    - session.id
+falsepositives:
+    - Workspace-aware IDE plugins that need to scope tool operations
+    - Servers on the configured allowlist
+level: low

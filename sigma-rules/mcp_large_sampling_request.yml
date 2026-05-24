@@ -1,0 +1,43 @@
+title: Large MCP Sampling Request (Potential Data Exfiltration via Prompt)
+id: f0e6b5c4-7d9f-8e1a-2b3c-4d5e6f7a8b9c
+status: experimental
+description: |
+    Detects sampling/createMessage requests with unusually large params payloads.
+    A large payload may indicate that a server has embedded exfiltrated data
+    (file contents, credentials, environment variables) into the prompt being
+    sent to the client LLM.
+
+    Normal sampling requests are typically under 8 KB. Requests exceeding 32 KB
+    warrant review — legitimate multi-turn conversations rarely grow this large
+    via a single sampling call.
+
+    Tune the threshold to your environment. A lower threshold catches more but
+    increases false positives in document-heavy workflows.
+references:
+    - https://modelcontextprotocol.io/specification/2025-06-18/client/sampling
+    - https://atlas.mitre.org/techniques/AML.T0054
+author: Andrew Hannaford (@andrewhannaford)
+date: 2026-05-24
+tags:
+    - attack.AML.T0054  # ATLAS: LLM Prompt Injection
+    - attack.T1567      # ATT&CK: Exfiltration Over Web Service
+logsource:
+    product: mcpshark
+    category: mcp_traffic
+detection:
+    selection:
+        mcp.method: 'sampling/createMessage'
+        mcp.direction: 'server_to_client'
+        payload.params_size_bytes|gte: 32768
+    condition: selection
+fields:
+    - mcp.server_name
+    - mcp.server_identity_sha256
+    - session.id
+    - payload.params_size_bytes
+    - payload.params_sha256
+falsepositives:
+    - AI coding assistants that include large code snippets as context
+    - Document summarisation workflows
+    - Multi-turn conversation aggregation in single requests
+level: medium

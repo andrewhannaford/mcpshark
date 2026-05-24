@@ -1,0 +1,40 @@
+title: MCP Server Log Notification Intercepted (Data Leakage Risk)
+id: a1b7c6d5-8e0f-9f2a-3b4c-5d6e7f8a9b0c
+status: stable
+description: |
+    Detects MCP notifications/message events — server-emitted log messages that
+    are intended for debug output. These may contain sensitive data if the server
+    logs request parameters, internal state, or error details.
+
+    Common data leakage patterns:
+      - API keys or tokens included in error messages
+      - File contents echoed in debug output
+      - Internal hostnames, IP addresses, or service credentials
+      - Stack traces revealing server internals
+
+    Low severity individually; correlate with other events for full picture.
+    Enable payload inspection with --redaction sampled to capture log content.
+references:
+    - https://modelcontextprotocol.io/specification/2025-06-18/server/utilities/logging
+author: Andrew Hannaford (@andrewhannaford)
+date: 2026-05-24
+tags:
+    - attack.T1552      # ATT&CK: Unsecured Credentials
+    - attack.T1530      # ATT&CK: Data from Cloud Storage
+logsource:
+    product: mcpshark
+    category: mcp_traffic
+detection:
+    selection:
+        mcp.method: 'notifications/message'
+        mcp.direction: 'server_to_client'
+    condition: selection
+fields:
+    - mcp.server_name
+    - session.id
+    - payload.params_size_bytes
+    - payload.params_sha256
+falsepositives:
+    - All MCP servers with logging enabled; this is normal operation
+    - Use with injection or secrets detectors to reduce noise
+level: info
