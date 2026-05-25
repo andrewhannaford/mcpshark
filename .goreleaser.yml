@@ -53,6 +53,26 @@ signs:
     artifacts: checksum
     output: true
 
+brews:
+  - name: mcpshark
+    repository:
+      owner: andrewhannaford
+      name: homebrew-tap
+      branch: main
+    directory: Formula
+    homepage: "https://github.com/andrewhannaford/mcpshark"
+    description: "Wireshark for the AI tool layer — transparent MCP proxy with runtime detection"
+    license: "Apache-2.0"
+    dependencies:
+      - name: go
+        type: build
+    test: |
+      assert_match version.to_s, shell_output("#{bin}/mcpshark version 2>&1")
+    install: |
+      system "go", "build",
+             *std_go_args(ldflags: "-s -w -X main.version=#{version}"),
+             "./cmd/mcpshark"
+
 changelog:
   sort: asc
   filters:
