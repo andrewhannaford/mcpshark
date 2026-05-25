@@ -59,6 +59,7 @@ brews:
       owner: andrewhannaford
       name: homebrew-tap
       branch: main
+      token: "{{ .Env.TAP_GITHUB_TOKEN }}"
     directory: Formula
     homepage: "https://github.com/andrewhannaford/mcpshark"
     description: "Wireshark for the AI tool layer — transparent MCP proxy with runtime detection"
