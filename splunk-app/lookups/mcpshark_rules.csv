@@ -1,0 +1,13 @@
+rule_id,rule_name,severity,atlas,attck,description
+mcp.sampling.create,Sampling Request Detected,high,AML.T0051,T1059,Server sent a sampling/createMessage request directing the client LLM to run a completion
+mcp.tools.drift,Tool List Drift Detected,high,AML.T0054,T1195,Tool descriptions changed between tools/list calls — possible rug-pull or server compromise
+mcp.injection.ignore_instructions,Prompt Injection - Ignore Instructions,high,AML.T0051,T1059,Classic jailbreak pattern detected in server-controlled text
+mcp.injection.file_exfil_target,Prompt Injection - File Exfil Target,high,AML.T0025,T1530,Common credential/key file path found in server-controlled text
+mcp.injection.credential_keywords,Prompt Injection - Credential Keywords,high,AML.T0025,T1555,Credential-harvesting keywords found in server-controlled text
+mcp.injection.verbatim_response,Prompt Injection - Verbatim Response,high,AML.T0051,T1059,Instruction to repeat/output text verbatim found in server-controlled text
+mcp.injection.hidden_instruction,Prompt Injection - Hidden Instruction,medium,AML.T0051,T1059,Hidden or invisible instruction pattern found in server-controlled text
+mcp.injection.data_exfil_url,Prompt Injection - Data Exfil URL,high,AML.T0025,T1048,Suspicious URL pattern suggesting data exfiltration in server-controlled text
+mcp.injection.role_hijack,Prompt Injection - Role Hijack,high,AML.T0051,T1059,System/role redefinition instruction found in server-controlled text
+mcp.allowlist.unknown_server,Unknown Server Identity,high,AML.T0010,T1195,MCP server not found in allowlist — may be supply chain compromise or misconfiguration
+mcp.tool_call.credential_path,Tool Call Credential Path,high,AML.T0025,T1083,Tool call arguments contain a credential file path
+mcp.resources.read_sensitive,Resource Read Sensitive Path,high,AML.T0025,T1005,Resource read request targets a sensitive file path

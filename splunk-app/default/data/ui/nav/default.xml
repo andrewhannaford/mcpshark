@@ -1,0 +1,5 @@
+<nav search_view="search" color="#000000">
+  <view name="mcp_overview" default="true" label="Overview"/>
+  <view name="mcp_detections" label="Detections"/>
+  <view name="search" label="Search"/>
+</nav>

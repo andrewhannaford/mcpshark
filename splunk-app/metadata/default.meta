@@ -1,0 +1,19 @@
+[]
+access = read : [ * ], write : [ admin, power ]
+export = system
+
+[views/mcp_overview]
+access = read : [ * ], write : [ admin, power ]
+export = system
+
+[views/mcp_detections]
+access = read : [ * ], write : [ admin, power ]
+export = system
+
+[lookups/mcpshark_severity.csv]
+access = read : [ * ], write : [ admin, power ]
+export = system
+
+[lookups/mcpshark_rules.csv]
+access = read : [ * ], write : [ admin, power ]
+export = system

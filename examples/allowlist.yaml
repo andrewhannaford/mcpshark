@@ -1,0 +1,33 @@
+# mcpshark allowlist — approved MCP servers
+#
+# Usage: mcpshark run --allowlist ~/.mcpshark/allowlist.yaml -- <server>
+#
+# Servers not in this list trigger a high-severity mcp.allowlist.unknown_server
+# detection on first contact. Add entries here after reviewing and approving a
+# server's binary identity.
+#
+# To obtain a server's SHA-256:
+#   macOS/Linux: shasum -a 256 $(which npx)
+#   Windows:     Get-FileHash (Get-Command npx).Source -Algorithm SHA256
+#
+# Note: SHA-256 is the hash of the *interpreter* binary (node, npx, python),
+# not the package. For stronger pinning, wrap the script in a compiled binary
+# or use the allowlist name-only entry and accept reduced confidence.
+
+servers:
+  - name: filesystem
+    sha256: ""  # replace with: shasum -a 256 /usr/bin/npx | awk '{print $1}'
+    description: "@modelcontextprotocol/server-filesystem — official Anthropic package"
+
+  - name: github
+    sha256: ""
+    description: "@modelcontextprotocol/server-github — official GitHub MCP server"
+
+  - name: brave-search
+    sha256: ""
+    description: "@modelcontextprotocol/server-brave-search"
+
+  # Example with a compiled Go MCP server (full binary hash pinning):
+  # - name: my-internal-server
+  #   sha256: "a1b2c3d4e5f6..."  # sha256sum /usr/local/bin/my-internal-server
+  #   description: "Internal tools server — approved 2026-05-24 by @andrew"

@@ -1,0 +1,146 @@
+<dashboard version="1.1" theme="dark">
+  <label>mcpshark — MCP Session Overview</label>
+  <description>All MCP traffic captured by mcpshark. One row per JSON-RPC message.</description>
+
+  <fieldset submitButton="false" autoRun="true">
+    <input type="time" token="time_range" searchWhenChanged="true">
+      <label>Time Range</label>
+      <default>
+        <earliestTime>-24h@h</earliestTime>
+        <latestTime>now</latestTime>
+      </default>
+    </input>
+    <input type="text" token="server_filter" searchWhenChanged="true">
+      <label>Server Name</label>
+      <default>*</default>
+    </input>
+  </fieldset>
+
+  <!-- Row 1: Summary tiles -->
+  <row>
+    <panel>
+      <title>Total Events</title>
+      <single>
+        <search>
+          <query>sourcetype=mcpshark mcp_server_name=$server_filter$ | stats count</query>
+          <earliest>$time_range.earliest$</earliest>
+          <latest>$time_range.latest$</latest>
+        </search>
+        <option name="drilldown">none</option>
+      </single>
+    </panel>
+    <panel>
+      <title>Sessions</title>
+      <single>
+        <search>
+          <query>sourcetype=mcpshark mcp_server_name=$server_filter$ | dc mcp_session_id</query>
+          <earliest>$time_range.earliest$</earliest>
+          <latest>$time_range.latest$</latest>
+        </search>
+        <option name="drilldown">none</option>
+      </single>
+    </panel>
+    <panel>
+      <title>Unique Servers</title>
+      <single>
+        <search>
+          <query>sourcetype=mcpshark | dc mcp_server_name</query>
+          <earliest>$time_range.earliest$</earliest>
+          <latest>$time_range.latest$</latest>
+        </search>
+        <option name="drilldown">none</option>
+      </single>
+    </panel>
+    <panel>
+      <title>Detection Events</title>
+      <single>
+        <search>
+          <query>sourcetype=mcpshark mcp_server_name=$server_filter$ detection_rule_id=* | stats count</query>
+          <earliest>$time_range.earliest$</earliest>
+          <latest>$time_range.latest$</latest>
+        </search>
+        <option name="colorMode">block</option>
+        <option name="rangeColors">["0x53a051","0xf8be34","0xf1813f","0xdc4e41"]</option>
+        <option name="rangeValues">[0,1,5]</option>
+        <option name="drilldown">none</option>
+      </single>
+    </panel>
+  </row>
+
+  <!-- Row 2: Traffic timeline and method breakdown -->
+  <row>
+    <panel>
+      <title>MCP Traffic Over Time</title>
+      <chart>
+        <search>
+          <query>sourcetype=mcpshark mcp_server_name=$server_filter$
+| timechart count by mcp_direction</query>
+          <earliest>$time_range.earliest$</earliest>
+          <latest>$time_range.latest$</latest>
+        </search>
+        <option name="charting.chart">area</option>
+        <option name="charting.chart.stackMode">stacked</option>
+        <option name="charting.legend.placement">bottom</option>
+      </chart>
+    </panel>
+    <panel>
+      <title>Top MCP Methods</title>
+      <chart>
+        <search>
+          <query>sourcetype=mcpshark mcp_server_name=$server_filter$ mcp_method!=""
+| top limit=10 mcp_method</query>
+          <earliest>$time_range.earliest$</earliest>
+          <latest>$time_range.latest$</latest>
+        </search>
+        <option name="charting.chart">bar</option>
+        <option name="charting.drilldown">none</option>
+      </chart>
+    </panel>
+  </row>
+
+  <!-- Row 3: Server summary table -->
+  <row>
+    <panel>
+      <title>Server Activity Summary</title>
+      <table>
+        <search>
+          <query>sourcetype=mcpshark mcp_server_name=$server_filter$
+| stats count AS total_events,
+        dc(mcp_session_id) AS sessions,
+        values(mcp_protocol_version) AS protocol_version,
+        count(eval(detection_rule_id!="")) AS detection_count
+  by mcp_server_name, mcp_server_sha256
+| sort -detection_count</query>
+          <earliest>$time_range.earliest$</earliest>
+          <latest>$time_range.latest$</latest>
+        </search>
+        <option name="drilldown">row</option>
+        <format type="color" field="detection_count">
+          <colorPalette type="minMidMax" maxColor="#DC4E41" midColor="#F8BE34" minColor="#53A051"/>
+          <scale type="minMidMax" midType="number" midValue="1"/>
+        </format>
+      </table>
+    </panel>
+  </row>
+
+  <!-- Row 4: Recent events -->
+  <row>
+    <panel>
+      <title>Recent MCP Events</title>
+      <table>
+        <search>
+          <query>sourcetype=mcpshark mcp_server_name=$server_filter$
+| table ts, mcp_server_name, mcp_direction, mcp_method, mcp_tool_name, mcp_outcome, detection_rule_id, detection_severity
+| sort -ts
+| head 50</query>
+          <earliest>$time_range.earliest$</earliest>
+          <latest>$time_range.latest$</latest>
+        </search>
+        <option name="drilldown">row</option>
+        <format type="color" field="detection_severity">
+          <colorPalette type="map">{"critical":#AE0BFF,"high":#DC4E41,"medium":#F8BE34,"low":#0877A6,"info":#555770}</colorPalette>
+        </format>
+      </table>
+    </panel>
+  </row>
+</dashboard>

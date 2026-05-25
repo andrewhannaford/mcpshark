@@ -1,0 +1,241 @@
+<dashboard version="1.1" theme="dark">
+  <label>mcpshark — Detections</label>
+  <description>Detection events fired by the mcpshark detection pipeline. Drill down into individual alerts, MITRE ATT&CK/ATLAS coverage, and per-session timelines.</description>
+
+  <fieldset submitButton="false" autoRun="true">
+    <input type="time" token="time_range" searchWhenChanged="true">
+      <label>Time Range</label>
+      <default>
+        <earliestTime>-24h@h</earliestTime>
+        <latestTime>now</latestTime>
+      </default>
+    </input>
+    <input type="dropdown" token="severity_filter" searchWhenChanged="true">
+      <label>Severity</label>
+      <default>*</default>
+      <choice value="*">All</choice>
+      <choice value="critical">Critical</choice>
+      <choice value="high">High</choice>
+      <choice value="medium">Medium</choice>
+      <choice value="low">Low</choice>
+      <choice value="info">Info</choice>
+    </input>
+    <input type="text" token="server_filter" searchWhenChanged="true">
+      <label>Server Name</label>
+      <default>*</default>
+    </input>
+  </fieldset>
+
+  <!-- Row 1: Detection summary tiles -->
+  <row>
+    <panel>
+      <title>Total Detections</title>
+      <single>
+        <search>
+          <query>sourcetype=mcpshark mcp_server_name=$server_filter$ detection_rule_id=* detection_severity=$severity_filter$ | stats count</query>
+          <earliest>$time_range.earliest$</earliest>
+          <latest>$time_range.latest$</latest>
+        </search>
+        <option name="drilldown">none</option>
+        <option name="colorMode">block</option>
+        <option name="rangeColors">["0x53a051","0xf8be34","0xf1813f","0xdc4e41"]</option>
+        <option name="rangeValues">[0,1,5]</option>
+      </single>
+    </panel>
+    <panel>
+      <title>Critical / High</title>
+      <single>
+        <search>
+          <query>sourcetype=mcpshark mcp_server_name=$server_filter$ detection_rule_id=* (detection_severity=critical OR detection_severity=high) | stats count</query>
+          <earliest>$time_range.earliest$</earliest>
+          <latest>$time_range.latest$</latest>
+        </search>
+        <option name="drilldown">none</option>
+        <option name="colorMode">block</option>
+        <option name="rangeColors">["0x53a051","0xf8be34","0xdc4e41"]</option>
+        <option name="rangeValues">[0,1]</option>
+      </single>
+    </panel>
+    <panel>
+      <title>Affected Sessions</title>
+      <single>
+        <search>
+          <query>sourcetype=mcpshark mcp_server_name=$server_filter$ detection_rule_id=* detection_severity=$severity_filter$ | dc mcp_session_id</query>
+          <earliest>$time_range.earliest$</earliest>
+          <latest>$time_range.latest$</latest>
+        </search>
+        <option name="drilldown">none</option>
+      </single>
+    </panel>
+    <panel>
+      <title>Unique Rules Fired</title>
+      <single>
+        <search>
+          <query>sourcetype=mcpshark mcp_server_name=$server_filter$ detection_rule_id=* detection_severity=$severity_filter$ | dc detection_rule_id</query>
+          <earliest>$time_range.earliest$</earliest>
+          <latest>$time_range.latest$</latest>
+        </search>
+        <option name="drilldown">none</option>
+      </single>
+    </panel>
+  </row>
+
+  <!-- Row 2: Detection timeline and severity breakdown -->
+  <row>
+    <panel>
+      <title>Detection Events Over Time</title>
+      <chart>
+        <search>
+          <query>sourcetype=mcpshark mcp_server_name=$server_filter$ detection_rule_id=* detection_severity=$severity_filter$
+| timechart count by detection_severity</query>
+          <earliest>$time_range.earliest$</earliest>
+          <latest>$time_range.latest$</latest>
+        </search>
+        <option name="charting.chart">column</option>
+        <option name="charting.chart.stackMode">stacked</option>
+        <option name="charting.legend.placement">bottom</option>
+        <option name="charting.fieldColors">{"critical": 0xAE0BFF, "high": 0xDC4E41, "medium": 0xF8BE34, "low": 0x0877A6, "info": 0x555770}</option>
+      </chart>
+    </panel>
+    <panel>
+      <title>Detections by Rule</title>
+      <chart>
+        <search>
+          <query>sourcetype=mcpshark mcp_server_name=$server_filter$ detection_rule_id=* detection_severity=$severity_filter$
+| top limit=12 detection_rule_id</query>
+          <earliest>$time_range.earliest$</earliest>
+          <latest>$time_range.latest$</latest>
+        </search>
+        <option name="charting.chart">bar</option>
+        <option name="charting.drilldown">none</option>
+      </chart>
+    </panel>
+  </row>
+
+  <!-- Row 3: MITRE ATT&CK / ATLAS heatmap -->
+  <row>
+    <panel>
+      <title>MITRE ATLAS Technique Coverage</title>
+      <table>
+        <search>
+          <query>sourcetype=mcpshark mcp_server_name=$server_filter$ detection_rule_id=* detection_severity=$severity_filter$ detection_atlas=*
+| stats count AS hits, values(detection_rule_id) AS rules, dc(mcp_session_id) AS sessions
+  by detection_atlas
+| sort -hits</query>
+          <earliest>$time_range.earliest$</earliest>
+          <latest>$time_range.latest$</latest>
+        </search>
+        <option name="drilldown">none</option>
+        <format type="color" field="hits">
+          <colorPalette type="minMidMax" maxColor="#DC4E41" midColor="#F8BE34" minColor="#53A051"/>
+          <scale type="minMidMax" midType="number" midValue="1"/>
+        </format>
+      </table>
+    </panel>
+    <panel>
+      <title>MITRE ATT&CK Technique Coverage</title>
+      <table>
+        <search>
+          <query>sourcetype=mcpshark mcp_server_name=$server_filter$ detection_rule_id=* detection_severity=$severity_filter$ detection_attck=*
+| stats count AS hits, values(detection_rule_id) AS rules, dc(mcp_session_id) AS sessions
+  by detection_attck
+| sort -hits</query>
+          <earliest>$time_range.earliest$</earliest>
+          <latest>$time_range.latest$</latest>
+        </search>
+        <option name="drilldown">none</option>
+        <format type="color" field="hits">
+          <colorPalette type="minMidMax" maxColor="#DC4E41" midColor="#F8BE34" minColor="#53A051"/>
+          <scale type="minMidMax" midType="number" midValue="1"/>
+        </format>
+      </table>
+    </panel>
+  </row>
+
+  <!-- Row 4: Rule summary with confidence scores -->
+  <row>
+    <panel>
+      <title>Rule Summary</title>
+      <table>
+        <search>
+          <query>sourcetype=mcpshark mcp_server_name=$server_filter$ detection_rule_id=* detection_severity=$severity_filter$
+| stats count AS total_fires,
+        dc(mcp_session_id) AS sessions,
+        avg(detection_confidence) AS avg_confidence,
+        values(detection_atlas) AS atlas,
+        values(detection_attck) AS attck
+  by detection_rule_id, detection_severity
+| eval avg_confidence=round(avg_confidence, 2)
+| sort -total_fires</query>
+          <earliest>$time_range.earliest$</earliest>
+          <latest>$time_range.latest$</latest>
+        </search>
+        <option name="drilldown">row</option>
+        <format type="color" field="detection_severity">
+          <colorPalette type="map">{"critical":#AE0BFF,"high":#DC4E41,"medium":#F8BE34,"low":#0877A6,"info":#555770}</colorPalette>
+        </format>
+        <format type="color" field="avg_confidence">
+          <colorPalette type="minMidMax" maxColor="#53A051" midColor="#F8BE34" minColor="#DC4E41"/>
+          <scale type="minMidMax" minValue="0" midValue="0.5" maxValue="1"/>
+        </format>
+      </table>
+    </panel>
+  </row>
+
+  <!-- Row 5: Session-level detection timeline -->
+  <row>
+    <panel>
+      <title>Detections by Session</title>
+      <table>
+        <search>
+          <query>sourcetype=mcpshark mcp_server_name=$server_filter$ detection_rule_id=* detection_severity=$severity_filter$
+| stats count AS detections,
+        values(detection_rule_id) AS rules_fired,
+        max(detection_severity) AS max_severity,
+        min(_time) AS first_seen,
+        max(_time) AS last_seen
+  by mcp_session_id, mcp_server_name
+| eval first_seen=strftime(first_seen, "%Y-%m-%d %H:%M:%S"),
+       last_seen=strftime(last_seen, "%Y-%m-%d %H:%M:%S")
+| sort -detections</query>
+          <earliest>$time_range.earliest$</earliest>
+          <latest>$time_range.latest$</latest>
+        </search>
+        <option name="drilldown">row</option>
+        <format type="color" field="max_severity">
+          <colorPalette type="map">{"critical":#AE0BFF,"high":#DC4E41,"medium":#F8BE34,"low":#0877A6,"info":#555770}</colorPalette>
+        </format>
+        <format type="color" field="detections">
+          <colorPalette type="minMidMax" maxColor="#DC4E41" midColor="#F8BE34" minColor="#53A051"/>
+          <scale type="minMidMax" midType="number" midValue="2"/>
+        </format>
+      </table>
+    </panel>
+  </row>
+
+  <!-- Row 6: Raw detection event log -->
+  <row>
+    <panel>
+      <title>Detection Event Log</title>
+      <table>
+        <search>
+          <query>sourcetype=mcpshark mcp_server_name=$server_filter$ detection_rule_id=* detection_severity=$severity_filter$
+| table ts, mcp_server_name, mcp_session_id, mcp_direction, mcp_method,
+         detection_rule_id, detection_severity, detection_confidence,
+         detection_atlas, detection_attck
+| sort -ts
+| head 100</query>
+          <earliest>$time_range.earliest$</earliest>
+          <latest>$time_range.latest$</latest>
+        </search>
+        <option name="drilldown">row</option>
+        <format type="color" field="detection_severity">
+          <colorPalette type="map">{"critical":#AE0BFF,"high":#DC4E41,"medium":#F8BE34,"low":#0877A6,"info":#555770}</colorPalette>
+        </format>
+        <format type="number" field="detection_confidence">
+          <option name="precision">2</option>
+        </format>
+      </table>
+    </panel>
+  </row>
+</dashboard>

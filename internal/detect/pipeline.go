@@ -17,6 +17,7 @@ package detect
 
 import (
 	"fmt"
+	"os"
 
 	"github.com/andrewhannaford/mcpshark/internal/protocol"
 	"github.com/andrewhannaford/mcpshark/pkg/schema"
@@ -47,8 +48,16 @@ func NewPipeline(cfg Config) *Pipeline {
 		NewDriftDetector(),
 		NewInjectionDetector(),
 	)
+	if cfg.AllowlistPath != "" {
+		al, err := NewAllowlistDetector(cfg.AllowlistPath)
+		if err != nil {
+			// Non-fatal: log and continue without allowlist enforcement.
+			fmt.Fprintf(os.Stderr, "mcpshark: allowlist: %v\n", err)
+		} else if al != nil {
+			p.detectors = append(p.detectors, al)
+		}
+	}
 	// TODO(week4): register secrets detector (trufflehog).
-	// TODO(week5): register allowlist detector.
 	return p
 }
 

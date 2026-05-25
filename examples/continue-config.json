@@ -1,0 +1,23 @@
+{
+  "models": [
+    {
+      "title": "Claude",
+      "provider": "anthropic",
+      "model": "claude-opus-4-7"
+    }
+  ],
+  "mcpServers": [
+    {
+      "name": "filesystem",
+      "command": "mcpshark",
+      "args": [
+        "run",
+        "--server-name", "filesystem",
+        "--output", "/tmp/mcpshark-events.jsonl",
+        "--allowlist", "/Users/you/.mcpshark/allowlist.yaml",
+        "--",
+        "npx", "-y", "@modelcontextprotocol/server-filesystem", "/tmp"
+      ]
+    }
+  ]
+}
