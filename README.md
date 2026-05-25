@@ -253,11 +253,24 @@ Requires Go 1.22+. No CGO. Compiles for macOS, Linux, and Windows.
 
 ## Roadmap
 
-- **v1.1** — trufflehog verified secrets detection
-- **v1.2** — Server identity pinning (binary SHA-256) + allowlist enforcement
-- **v1.3** — Prometheus `/metrics` endpoint
-- **v1.4** — Splunk app with detection dashboards
-- **v2.0** — Streamable HTTP transport
+**v1.0 (current)**
+- stdio transparent proxy with forward-first pump
+- 9-pattern injection scanner, tool drift detector, server allowlist (SHA-256 pinning)
+- 12 Sigma rules with MITRE ATT&CK + ATLAS IDs
+- Full Splunk app: props.conf, transforms.conf, two dashboards, lookup tables
+- OCSF Application Activity (class 6003) JSON-L output
+
+**v1.1**
+- Trufflehog verified secrets detection in tool call params and results
+- Unicode normalization to catch homoglyph injection bypass (see `docs/bypass-paths.md`)
+- Prometheus `/metrics` endpoint (`--metrics-port` flag)
+
+**v1.2**
+- Cross-session drift persistence (SQLite state store)
+- Homebrew tap for one-line install
+
+**v2.0**
+- Streamable HTTP / SSE transport support
 
 ---
 
